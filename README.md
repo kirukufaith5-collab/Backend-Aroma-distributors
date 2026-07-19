@@ -1,6 +1,6 @@
-# Fine Aromas - Backend API Engine
+# Aroma distributors- Backend API Engine
 
-This is the Flask RESTful API backend for the Aromas distributors platform. It manages user authentication, inventory calculations, farmer delivery processing, and wholesale client order dispatching.
+This is the Flask RESTful API backend for the Aroma distributors platform. It manages user authentication, inventory calculations, farmer delivery processing, and wholesale client order dispatching.
 
 ## 🛠️ Backend Tech Stack
 
