@@ -1,12 +1,15 @@
 import os
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 
-# Base directory of the backend folder
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+app = Flask(__name__)
 
-class Config:
-    #SEcret key for sessions/auth
-    SECRET_KEY='my-secret-key-123'
+# Fix Render's URI format for SQLAlchemy 1.4+
+db_uri = os.environ.get('DATABASE_URL', 'sqlite:///dev.db')
+if db_uri and db_uri.startswith("postgres://"):
+    db_uri = db_uri.replace("postgres://", "postgresql://", 1)
 
-    #Sqlite database file path
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'app.db')
-    SQLALCHMEY_TRACK_MODIFICATIONS =False
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fallback-dev-key')
+
+db = SQLAlchemy(app)
