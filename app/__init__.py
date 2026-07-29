@@ -26,6 +26,7 @@ def create_app():
     app.register_blueprint(admin_bp,url_prefix='/admin')
     app.register_blueprint(farmer_bp,url_prefix='/farmer')
     app.register_blueprint(auth_bp,url_prefix='/auth')
+    
 
     #Create database tables
     with app.app_context():
