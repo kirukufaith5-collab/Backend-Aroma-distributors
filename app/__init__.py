@@ -25,7 +25,7 @@ def create_app():
     app.register_blueprint(auth_bp,url_prefix='/auth')
 
     #Create database tables
-    with app.app_context()
+    with app.app_context():
      db.create_all()
 
      return app
