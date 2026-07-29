@@ -2,6 +2,8 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from config import Config
+from flask_cors import CORS
+
 
 #Initialize database and schema extensions
 db =SQLAlchemy()
@@ -9,11 +11,12 @@ ma =Marshmallow()
 
 def create_app():
     app =Flask(__name__)
-    app.config.from_object(Config)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 
     #Bind extensions to app
     db.init_app(app)
     ma.init_app(app)
+    CORS(app)
 
     #Register blueprints for routes
     from app.Admin.routes import admin_bp

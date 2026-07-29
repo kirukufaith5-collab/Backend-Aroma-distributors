@@ -4,11 +4,11 @@ from app.models import User, Batch,Order
 #Schema to serialize Batch data
 class BatchSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
-        model =Batch
-        load_instance =True
+        model = Batch
+        load_instance = True
 
 #Schema to serialize Order data
-class OrderSchema(ma.SQLAlchmeyAutoSchema):
+class OrderSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model =Order
         load_instance =True
