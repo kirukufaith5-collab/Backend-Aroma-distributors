@@ -1,4 +1,22 @@
+# Python cache files and directories
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# VS Code settings and workspace files
+.vscode/
+
+# Ignore any file or folder ending with 'sql' (case-insensitive where supported)
+*sql/
+*sql
+*.sql
+
+# Virtual environments
 venv/
-.vscode
-.pycache
-.sql
+.venv/
+
+# Environment variables & local databases
+.env
+*.db
+*.sqlite3
