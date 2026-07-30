@@ -35,3 +35,19 @@ def update_batch_status(batch_id):
     db.session.commit()
     
     return jsonify({'message': f'Batch status updated to {batch.status}'}), 200
+
+# 3. GET: Fetch all client orders
+
+@admin_bp.route('/orders', methods=['GET'])
+def get_orders():
+    orders = ClientOrder.query.all()
+    output = []
+    for o in orders:
+        output.append({
+            'order_id': o.order_id,
+            'client_id': o.client_id,
+            'created_by_admin_id': o.created_by_admin_id,
+            'status': o.status,
+            'closed_at': o.closed_at
+        })
+    return jsonify(output), 200
