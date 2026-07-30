@@ -1,57 +1,91 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import create_access_token
 from app import db
-from app.models import User
+from app.models import Farmer, Admin
 
-# Define the blueprint
 auth_bp = Blueprint('auth_bp', __name__)
 
-# Route for registering a new user
+# 1. POST: Register a new Farmer or Admin
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    # 1. Grab JSON data sent from Postman or React
     data = request.get_json()
     
-    # 2. Extract values from the JSON
-    username = data.get('username')
+    # Extract common fields
+    email = data.get('email')
     password = data.get('password')
-    role = data.get('role', 'Farmer') # Default to Farmer if not provided
+    name = data.get('name')
+    role = data.get('role', 'Farmer')  # 'Farmer' or 'Admin'
 
-    # 3. Simple check to make sure fields aren't missing
-    if not username or not password:
-        return jsonify({'message': 'Username and password are required!'}), 400
+    # 1. Validate required fields
+    if not email or not password or not name:
+        return jsonify({'message': 'Email, password, and name are required!'}), 400
 
-    # 4. Check if the user already exists in the database
-    existing_user = User.query.filter_by(username=username).first()
-    if existing_user:
-        return jsonify({'message': 'Username already exists!'}), 400
+    # 2. Check if user exists in either table
+    existing_farmer = Farmer.query.filter_by(email=email).first()
+    existing_admin = Admin.query.filter_by(email=email).first()
+    
+    if existing_farmer or existing_admin:
+        return jsonify({'message': 'Email is already registered!'}), 400
 
-    # 5. Create a new User instance and save to database
-    new_user = User(username=username, password=password, role=role)
+    # 3. Create the user based on specified role
+    if role.lower() == 'admin':
+        new_user = Admin(
+            email=email,
+            password_hash=password,  # Storing password
+            name=name
+        )
+    else:
+        new_user = Farmer(
+            email=email,
+            password_hash=password,
+            name=name,
+            farm_name=data.get('farm_name', ''),
+            farm_location=data.get('farm_location', '')
+        )
+
+    # 4. Save new user to SQLite
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({'message': 'User registered successfully!'}), 201
+    return jsonify({'message': f'{role} registered successfully!'}), 201
 
 
-# Route for logging in
+
+# 2. POST: User Login (Returns JWT Token)
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    username = data.get('username')
+    email = data.get('email')
     password = data.get('password')
 
-    # Find the user by username
-    user = User.query.filter_by(username=username).first()
+    if not email or not password:
+        return jsonify({'message': 'Email and password are required!'}), 400
 
-    # Check if user exists and password matches
-    if user and user.password == password:
+    # 1. First search in Farmers table
+    user = Farmer.query.filter_by(email=email).first()
+    role = 'Farmer'
+    user_id = user.farmer_id if user else None
+
+    # 2. If not a Farmer, search in Admins table
+    if not user:
+        user = Admin.query.filter_by(email=email).first()
+        role = 'Admin'
+        user_id = user.admin_id if user else None
+
+    # 3. Verify user exists and password matches
+    if user and user.password_hash == password:
+        # Generate a JWT access token containing identity and role info
+        access_token = create_access_token(identity={'id': user_id, 'email': user.email, 'role': role})
+        
         return jsonify({
             'message': 'Login successful!',
+            'token': access_token,
             'user': {
-                'id': user.id,
-                'username': user.username,
-                'role': user.role
+                'id': user_id,
+                'name': user.name,
+                'email': user.email,
+                'role': role
             }
         }), 200
 
-    return jsonify({'message': 'Invalid username or password!'}), 401
+    return jsonify({'message': 'Invalid email or password!'}), 401

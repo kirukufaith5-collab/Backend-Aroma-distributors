@@ -3,10 +3,16 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_cors import CORS
 from config import Config
+from flask_jwt_extended import JWTManager
 
 # Initialize database and schema extensions
 db = SQLAlchemy()
 ma = Marshmallow()
+jwt = JWTManager()
+
+def create_app():
+    app = Flask(__name__)
+    app.config['JWT_SECRET_KEY'] = 'Clockit@234959' 
 
 def create_app():
     app = Flask(__name__)
@@ -22,6 +28,7 @@ def create_app():
     db.init_app(app)
     ma.init_app(app)
     CORS(app)
+    jwt.init_app(app)
 
     # Register blueprints for routes
     from app.Admin.routes import admin_bp
