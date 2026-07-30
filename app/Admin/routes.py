@@ -30,10 +30,11 @@ def get_orders():
 def create_order():
     data = request.json
     new_order = Order(
-        client_name=data['client_name'],
-        product_type=data['product_type'],
-        quantity=float(data['quantity']),
-        unit_price=float(data['unit_price'])
+        client_name=data.get('client_name'),
+        product_type=data.get('product_type'),
+        quantity=float(data.get('quantity')),
+        unit_price=float(data.get('unit_price')),
+        status =data.get('status','Pending')
     )
     db.session.add(new_order)
     db.session.commit()

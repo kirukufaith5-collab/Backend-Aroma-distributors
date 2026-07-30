@@ -19,7 +19,7 @@ def create_batch():
     
     new_batch = Batch(
         farmer_id=data.get('farmer_id'),
-        product_type=data.get('coffee_type'),
+        product_type=data.get('product_type'),
         quantity_kg=data.get('quantity_kg'),
         notes=data.get('notes', '')
     )
