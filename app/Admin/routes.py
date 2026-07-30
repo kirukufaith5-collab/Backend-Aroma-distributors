@@ -51,3 +51,27 @@ def get_orders():
             'closed_at': o.closed_at
         })
     return jsonify(output), 200
+
+# 4. POST: Create a new client order
+
+@admin_bp.route('/orders', methods=['POST'])
+def create_order():
+    data = request.get_json()
+    
+    # Check for required fields based on the database schema
+    if not data or 'client_id' not in data or 'created_by_admin_id' not in data:
+        return jsonify({'message': 'client_id and created_by_admin_id are required!'}), 400
+
+    new_order = ClientOrder(
+        client_id=data.get('client_id'),
+        created_by_admin_id=data.get('created_by_admin_id'),
+        status=data.get('status', 'Pending')
+    )
+    
+    db.session.add(new_order)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Order created successfully!',
+        'order_id': new_order.order_id
+    }), 201
