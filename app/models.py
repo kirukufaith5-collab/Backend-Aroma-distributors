@@ -78,3 +78,13 @@ class OrderedItem(db.Model):
     order_id = db.Column(db.Integer, db.ForeignKey('client_orders.order_id'), nullable=False)
     batch_id = db.Column(db.Integer, db.ForeignKey('product_batches.batch_id'), nullable=False)
     allocated_weight = db.Column(db.Float, nullable=False)
+# Payouts Model
+class Payout(db.Model):
+    __tablename__ = 'payouts'
+
+    payout_id = db.Column(db.Integer, primary_key=True)
+    farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.farmer_id'), nullable=False)
+    batch_id = db.Column(db.Integer, db.ForeignKey('product_batches.batch_id'), nullable=False)
+    amount_owed = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(50), default='Unpaid')
+    paid_at = db.Column(db.DateTime, nullable=True)
