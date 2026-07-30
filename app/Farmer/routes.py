@@ -24,3 +24,38 @@ def get_farmer_batches(farmer_id):
         })
     
     return jsonify(output), 200
+
+
+# 2. POST: Create a new harvest batch
+
+@farmer_bp.route('/batches', methods=['POST'])
+def create_batch():
+
+    data = request.get_json()
+    
+    # Simple check to make sure required information is present
+    if not data or 'farmer_id' not in data or 'product_type' not in data or 'weight' not in data:
+        return jsonify({'message': 'Missing required fields: farmer_id, product_type, weight'}), 400
+
+    # Create a new instance of the ProductBatch model
+    new_batch = ProductBatch(
+        farmer_id=data.get('farmer_id'),
+        product_type=data.get('product_type'),
+        weight=data.get('weight'),
+        status=data.get('status', 'Available') # Default status to 'Available'
+    )
+    
+    # Save the new batch to SQLite
+    db.session.add(new_batch)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Batch created successfully!',
+        'batch': {
+            'batch_id': new_batch.batch_id,
+            'farmer_id': new_batch.farmer_id,
+            'product_type': new_batch.product_type,
+            'weight': new_batch.weight,
+            'status': new_batch.status
+        }
+    }), 201
