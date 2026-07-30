@@ -30,7 +30,7 @@ def get_farmer_batches(farmer_id):
 # 2. POST: Create a new harvest batch
 
 @farmer_bp.route('/batches', methods=['POST'])
-@jwt_requred()
+@jwt_required()
 def create_batch():
 
     data = request.get_json()
