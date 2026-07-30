@@ -76,3 +76,16 @@ def update_batch(batch_id):
     db.session.commit()
 
     return jsonify({'message': 'Batch updated successfully!'}), 200
+
+
+# 4. DELETE: Remove a harvest batch
+@farmer_bp.route('/batches/<int:batch_id>', methods=['DELETE'])
+def delete_batch(batch_id):
+    # Find the batch to delete
+    batch = ProductBatch.query.get_or_404(batch_id)
+    
+    # Remove from database and save changes
+    db.session.delete(batch)
+    db.session.commit()
+
+    return jsonify({'message': f'Batch {batch_id} deleted successfully!'}), 200
