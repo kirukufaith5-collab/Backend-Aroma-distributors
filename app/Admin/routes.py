@@ -75,3 +75,14 @@ def create_order():
         'message': 'Order created successfully!',
         'order_id': new_order.order_id
     }), 201
+
+
+# 5. DELETE: Cancel or delete an order
+@admin_bp.route('/orders/<int:order_id>', methods=['DELETE'])
+def delete_order(order_id):
+    order = ClientOrder.query.get_or_404(order_id)
+    
+    db.session.delete(order)
+    db.session.commit()
+    
+    return jsonify({'message': f'Order {order_id} deleted successfully!'}), 200
