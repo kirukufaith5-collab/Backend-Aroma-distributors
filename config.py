@@ -1,7 +1,14 @@
-# config.py
 import os
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'default-key')
+    # Secret key for Flask session security
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-flask-secret-key-12345')
+
+    # Secret key used by Flask-JWT-Extended to sign tokens
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'dev-jwt-secret-key-67890')
+
+    # Database configuration (defaults to dev.db in your project root)
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///dev.db')
+
+    # Prevents unnecessary memory overhead from tracking modifications
     SQLALCHEMY_TRACK_MODIFICATIONS = False
