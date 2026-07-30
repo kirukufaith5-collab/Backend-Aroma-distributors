@@ -56,3 +56,16 @@ class ProductBatch(db.Model):
     # Relationships
     payouts = db.relationship('Payout', backref='batch', lazy=True)
     ordered_items = db.relationship('OrderedItem', backref='batch', lazy=True)
+
+# Client Orders Model
+class ClientOrder(db.Model):
+    __tablename__ = 'client_orders'
+
+    order_id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.client_id'), nullable=False)
+    created_by_admin_id = db.Column(db.Integer, db.ForeignKey('admins.admin_id'), nullable=False)
+    status = db.Column(db.String(50), default='Pending')
+    closed_at = db.Column(db.DateTime, nullable=True)
+
+    # Relationship
+    ordered_items = db.relationship('OrderedItem', backref='order', lazy=True)
