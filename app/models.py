@@ -29,3 +29,15 @@ class Admin(db.Model):
 
     # Relationship (One Admin -> Many Client Orders created)
     orders = db.relationship('ClientOrder', backref='admin', lazy=True)
+
+    
+class Client(db.Model):
+    __tablename__ = 'clients'
+
+    client_id = db.Column(db.Integer, primary_key=True)
+    company_name = db.Column(db.String(100), nullable=False)
+    contact_email = db.Column(db.String(120), nullable=False)         
+    address = db.Column(db.String(200))       
+
+    # Relationship (One Client -> Many Orders)
+    orders = db.relationship('ClientOrder', backref='client', lazy=True)
