@@ -59,3 +59,20 @@ def create_batch():
             'status': new_batch.status
         }
     }), 201
+
+
+# 3. PUT: Update a batch (e.g., change weight or type)
+@farmer_bp.route('/batches/<int:batch_id>', methods=['PUT'])
+def update_batch(batch_id):
+    # Find the batch by ID or return a 404 error if it doesn't exist
+    batch = ProductBatch.query.get_or_404(batch_id)
+    data = request.get_json()
+
+    # Update fields if new data was provided, otherwise keep existing values
+    batch.product_type = data.get('product_type', batch.product_type)
+    batch.weight = data.get('weight', batch.weight)
+    
+    # Save updates to database
+    db.session.commit()
+
+    return jsonify({'message': 'Batch updated successfully!'}), 200
