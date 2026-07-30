@@ -69,3 +69,12 @@ class ClientOrder(db.Model):
 
     # Relationship
     ordered_items = db.relationship('OrderedItem', backref='order', lazy=True)
+
+ #  Ordered Items (Join Table for Many-to-Many between Orders and Batches)
+class OrderedItem(db.Model):
+    __tablename__ = 'ordered_items'
+
+    order_item_id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('client_orders.order_id'), nullable=False)
+    batch_id = db.Column(db.Integer, db.ForeignKey('product_batches.batch_id'), nullable=False)
+    allocated_weight = db.Column(db.Float, nullable=False)
