@@ -7,7 +7,7 @@ class Config:
     # Secret key used by Flask-JWT-Extended to sign tokens
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'dev-jwt-secret-key-67890')
 
-    # Database configuration (defaults to dev.db in your project root)
+    # Database configuration set to dev.db
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///dev.db')
 
     # Prevents unnecessary memory overhead from tracking modifications

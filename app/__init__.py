@@ -22,7 +22,7 @@ def create_app():
     
     # Fallback SQLite URI if not set in Config
     if not app.config.get('SQLALCHEMY_DATABASE_URI'):
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dev.db'
 
     # Bind extensions to app
     db.init_app(app)

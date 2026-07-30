@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 from app import db
 from app.models import ProductBatch
 
@@ -29,6 +30,7 @@ def get_farmer_batches(farmer_id):
 # 2. POST: Create a new harvest batch
 
 @farmer_bp.route('/batches', methods=['POST'])
+@jwt_requred()
 def create_batch():
 
     data = request.get_json()
