@@ -4,18 +4,13 @@ from app.models import ProductBatch, ClientOrder, Client, OrderedItem
 
 admin_bp = Blueprint('admin', __name__)
 
-
-# -------------------------------------------------------------
-# 1. GET: Fetch all batches for admin inspection
-# -------------------------------------------------------------
+# 1. GET: Fetch all batches
 @admin_bp.route('/batches', methods=['GET'])
 def get_all_batches():
     batches = ProductBatch.query.all()
     output = []
     for b in batches:
-        # Include farmer name via relationship if available
         farmer_name = b.farmer.name if hasattr(b, 'farmer') and b.farmer else f"Farmer #{b.farmer_id}"
-        
         output.append({
             'batch_id': b.batch_id,
             'farmer_id': b.farmer_id,
@@ -26,24 +21,16 @@ def get_all_batches():
         })
     return jsonify(output), 200
 
-
-# -------------------------------------------------------------
-# 2. PUT: Change batch status (Approve / Reject)
-# -------------------------------------------------------------
+# 2. PUT/POST: Update batch status
 @admin_bp.route('/batches/<int:batch_id>/status', methods=['PUT', 'POST'])
 def update_batch_status(batch_id):
     batch = ProductBatch.query.get_or_404(batch_id)
     data = request.get_json() or {}
-    
     batch.status = data.get('status', batch.status)
     db.session.commit()
-    
     return jsonify({'message': f'Batch status updated to {batch.status}'}), 200
 
-
-# -------------------------------------------------------------
-# 3. GET: Fetch all clients (For dropdown in React Create Order form)
-# -------------------------------------------------------------
+# 3. GET: Fetch all clients
 @admin_bp.route('/clients', methods=['GET'])
 def get_clients():
     clients = Client.query.all()
@@ -55,19 +42,13 @@ def get_clients():
         })
     return jsonify(output), 200
 
-
-# -------------------------------------------------------------
-# 4. GET: Fetch all client orders with Client & Batch details
-# -------------------------------------------------------------
+# 4. GET: Fetch all orders (INITIALIZE output = [])
 @admin_bp.route('/orders', methods=['GET'])
 def get_orders():
     orders = ClientOrder.query.all()
-    output = []
+    output = []  # Fixes NameError
     for o in orders:
-        # Get client company name from Client relationship
         client_name = o.client.company_name if o.client else "Unknown Client"
-        
-        # Get allocated weight and product type from ordered_items relationship
         first_item = o.ordered_items[0] if o.ordered_items else None
         product_type = first_item.batch.product_type if (first_item and first_item.batch) else "Produce"
         allocated_weight = first_item.allocated_weight if first_item else 0.0
@@ -84,36 +65,75 @@ def get_orders():
         })
     return jsonify(output), 200
 
+# 5. POST: Create order (Supports text inputs with automatic record creation)
+# app/Admin/routes.py
 
-# -------------------------------------------------------------
-# 5. POST: Create a new client order (Creates ClientOrder + OrderedItem)
-# -------------------------------------------------------------
 @admin_bp.route('/orders', methods=['POST'])
 def create_order():
-    data = request.get_json()
+    data = request.get_json() or {}
     
-    if not data or 'client_id' not in data:
-        return jsonify({'message': 'client_id is required!'}), 400
+    # Extract form values safely
+    raw_client = data.get('client_id') or data.get('client_name') or data.get('client')
+    raw_batch = data.get('batch_id') or data.get('product_type') or data.get('batch')
+    
+    try:
+        allocated_weight = float(data.get('allocated_weight', 0))
+    except (ValueError, TypeError):
+        allocated_weight = 0.0
+
+    # Validation: Ensure values exist
+    if not raw_client or not raw_batch or allocated_weight <= 0:
+        return jsonify({
+            'message': 'Invalid input! Please provide client, batch, and a weight greater than 0.',
+            'received': data
+        }), 400
 
     try:
-        # Step A: Insert into client_orders table
+        # Resolve or Create Client
+        if isinstance(raw_client, int) or str(raw_client).isdigit():
+            client = Client.query.get(int(raw_client))
+        else:
+            client = Client.query.filter(Client.company_name.ilike(str(raw_client))).first()
+
+        if not client:
+            client = Client(company_name=str(raw_client))
+            db.session.add(client)
+            db.session.flush()
+
+        # Resolve or Create ProductBatch
+        if isinstance(raw_batch, int) or str(raw_batch).isdigit():
+            batch = ProductBatch.query.get(int(raw_batch))
+        else:
+            batch = ProductBatch.query.filter(ProductBatch.product_type.ilike(str(raw_batch))).first()
+
+        if not batch:
+            batch = ProductBatch(
+                farmer_id=1,  # Default fallback ID
+                product_type=str(raw_batch),
+                weight=allocated_weight,
+                status='Approved'
+            )
+            db.session.add(batch)
+            db.session.flush()
+
+        # Create ClientOrder
         new_order = ClientOrder(
-            client_id=data.get('client_id'),
-            created_by_admin_id=data.get('created_by_admin_id', 1), # Defaults to Admin 1
-            status=data.get('status', 'Pending')
+            client_id=client.client_id,
+            created_by_admin_id=data.get('created_by_admin_id', 1),
+            status='Pending'
         )
         db.session.add(new_order)
-        db.session.commit()  # Commits to generate new_order.order_id
+        db.session.flush()
 
-        # Step B: If batch_id and allocated_weight are provided, link them in ordered_items
-        if 'batch_id' in data and 'allocated_weight' in data:
-            new_item = OrderedItem(
-                order_id=new_order.order_id,
-                batch_id=data.get('batch_id'),
-                allocated_weight=float(data.get('allocated_weight'))
-            )
-            db.session.add(new_item)
-            db.session.commit()
+        # Create OrderedItem Link
+        new_item = OrderedItem(
+            order_id=new_order.order_id,
+            batch_id=batch.batch_id,
+            allocated_weight=allocated_weight
+        )
+        db.session.add(new_item)
+        
+        db.session.commit()
 
         return jsonify({
             'message': 'Order created successfully!',
@@ -122,31 +142,4 @@ def create_order():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'message': 'Failed to create order', 'error': str(e)}), 400
-
-
-# -------------------------------------------------------------
-# 6. POST: Close an existing order
-# -------------------------------------------------------------
-@admin_bp.route('/orders/<int:order_id>/close', methods=['POST', 'PUT'])
-def close_order(order_id):
-    order = ClientOrder.query.get_or_404(order_id)
-    order.status = 'Closed'
-    db.session.commit()
-    return jsonify({'message': f'Order #{order_id} marked as closed.'}), 200
-
-
-# -------------------------------------------------------------
-# 7. DELETE: Cancel or delete an order
-# -------------------------------------------------------------
-@admin_bp.route('/orders/<int:order_id>', methods=['DELETE'])
-def delete_order(order_id):
-    order = ClientOrder.query.get_or_404(order_id)
-    
-    # Delete associated ordered items first to maintain referential integrity
-    OrderedItem.query.filter_by(order_id=order_id).delete()
-    
-    db.session.delete(order)
-    db.session.commit()
-    
-    return jsonify({'message': f'Order {order_id} deleted successfully!'}), 200
+        return jsonify({'message': 'Database insert error', 'error': str(e)}), 400
